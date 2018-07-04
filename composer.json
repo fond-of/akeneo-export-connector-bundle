@@ -25,7 +25,7 @@
   },
   "autoload": {
     "psr-4": {
-      "FondOfAkeneo\\Bundle\\ExportBundle\\": "src/FondOfAkeneo/Bundle/ExportConnectorBundle"
+      "FondOfAkeneo\\Bundle\\ExportConnectorBundle\\": "src/FondOfAkeneo/Bundle/ExportConnectorBundle"
     }
   },
   "config": {
