@@ -1,0 +1,11 @@
+services:
+    fondofakeneo_export_connector.step.csv_product.export:
+        class: '%pim_connector.step.item_step.class%'
+        arguments:
+            - 'export'
+            - '@event_dispatcher'
+            - '@akeneo_batch.job_repository'
+            - '@pim_connector.reader.database.product'
+            - '@fondofakeneo_export_connector.processor.normalization.product'
+            - '@pim_connector.writer.file.csv_product'
+            - '%pim_job_product_batch_size%'

@@ -1,0 +1,15 @@
+parameters:
+    fondofakeneo_export_connector.connector_name: 'FOND OF Akeneo CSV Connector'
+    fondofakeneo_export_connector.job_name.csv_product_export: 'fondofakeneo_csv_product_export'
+
+services:
+    fondofakeneo_export_connector.job.csv_product_export:
+            class: '%pim_connector.job.simple_job.class%'
+            arguments:
+                - '%fondofakeneo_export_connector.job_name.csv_product_export%'
+                - '@event_dispatcher'
+                - '@akeneo_batch.job_repository'
+                -
+                    - '@fondofakeneo_export_connector.step.csv_product.export'
+            tags:
+                - { name: akeneo_batch.job, connector: '%fondofakeneo_export_connector.connector_name%', type: '%pim_connector.job.export_type%' }

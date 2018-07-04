@@ -1,0 +1,35 @@
+{
+  "name": "fond-of-akeneo/export-connector-bundle",
+  "type": "symfony-bundle",
+  "description": "FOND OF bundle to export products with localized attribute option labels.",
+  "homepage": "https://www.fondof.de",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Daniel Rose",
+      "email": "daniel-rose@gmx.de"
+    }
+  ],
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/akeneo/pim-community-dev.git"
+    },
+    {
+      "type": "vcs",
+      "url": "https://github.com/akeneo/platform.git"
+    }
+  ],
+  "require": {
+    "akeneo/pim-community-dev": "2.*"
+  },
+  "autoload": {
+    "psr-4": {
+      "FondOfAkeneo\\Bundle\\ExportBundle\\": "src/FondOfAkeneo/Bundle/ExportConnectorBundle"
+    }
+  },
+  "config": {
+    "bin-dir": "bin"
+  },
+  "minimum-stability": "dev"
+}
