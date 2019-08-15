@@ -2,7 +2,7 @@
 
 namespace FondOfAkeneo\Bundle\ExportConnectorBundle\Processor\Normalization;
 
-use Pim\Component\Connector\Processor\Normalization\ProductProcessor as AkeneoProductProcessor;
+use Akeneo\Pim\Enrichment\Component\Product\Connector\Processor\Normalization\ProductProcessor as AkeneoProductProcessor;
 
 class ProductProcessor extends AkeneoProductProcessor
 {
