@@ -1,19 +1,19 @@
 services:
-    fondofakeneo_export_connector.job.job_parameters.default_values_provider.product_csv_export:
-         class: '%pim_connector.job.job_parameters.default_values_provider.product_csv_export.class%'
-         arguments:
-             - '@pim_connector.job.job_parameters.default_values_provider.simple_csv_export'
-             - '@pim_catalog.repository.channel'
-             - '@pim_catalog.repository.locale'
-             -
-                 - '%fondofakeneo_export_connector.job_name.csv_product_export%'
-         tags:
-             - { name: akeneo_batch.job.job_parameters.default_values_provider }
+    fondofakeneo_export_connector.job.job_parameters.default_values_provider.simple_csv_export:
+        class: 'Akeneo\Pim\Enrichment\Component\Product\Connector\Job\JobParameters\DefaultValueProvider\ProductCsvExport'
+        arguments:
+            - '@akeneo_pim_enrichment.job.job_parameters.default_values_provider.simple_csv_export'
+            - '@pim_catalog.repository.channel'
+            - '@pim_catalog.repository.locale'
+            -
+                - '%fondofakeneo_export_connector.job_name.csv_product_export%'
+        tags:
+            - { name: akeneo_batch.job.job_parameters.default_values_provider }
 
     fondofakeneo_export_connector.job.job_parameters.constraint_collection_provider.product_csv_export:
-        class: '%pim_connector.job.job_parameters.constraint_collection_provider.product_csv_export.class%'
+        class: 'Akeneo\Pim\Enrichment\Component\Product\Connector\Job\JobParameters\ConstraintCollectionProvider\ProductCsvExport'
         arguments:
-            - '@pim_connector.job.job_parameters.constraint_collection_provider.simple_csv_export'
+            - '@akeneo_pim_enrichment.job.job_parameters.constraint_collection_provider.simple_csv_export'
             -
                 - '%fondofakeneo_export_connector.job_name.csv_product_export%'
         tags:

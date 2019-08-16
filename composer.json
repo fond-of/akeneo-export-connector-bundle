@@ -10,18 +10,8 @@
       "email": "daniel-rose@gmx.de"
     }
   ],
-  "repositories": [
-    {
-      "type": "vcs",
-      "url": "https://github.com/akeneo/pim-community-dev.git"
-    },
-    {
-      "type": "vcs",
-      "url": "https://github.com/akeneo/platform.git"
-    }
-  ],
   "require": {
-    "akeneo/pim-community-dev": "2.*"
+    "akeneo/pim-community-dev": "~3.0"
   },
   "autoload": {
     "psr-4": {

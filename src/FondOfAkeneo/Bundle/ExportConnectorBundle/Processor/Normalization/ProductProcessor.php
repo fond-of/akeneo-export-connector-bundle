@@ -2,10 +2,51 @@
 
 namespace FondOfAkeneo\Bundle\ExportConnectorBundle\Processor\Normalization;
 
-use Pim\Component\Connector\Processor\Normalization\ProductProcessor as AkeneoProductProcessor;
+use Akeneo\Pim\Enrichment\Component\Product\Connector\Processor\Normalization\ProductProcessor as AkeneoProductProcessor;
+use Akeneo\Pim\Enrichment\Component\Product\Value\OptionsValue;
+use Akeneo\Pim\Enrichment\Component\Product\Value\OptionValue;
+use Akeneo\Pim\Enrichment\Component\Product\Value\ScalarValue;
+use Akeneo\Pim\Enrichment\Component\Product\ValuesFiller\EntityWithFamilyValuesFillerInterface;
+use Akeneo\Pim\Structure\Component\Repository\AttributeOptionRepositoryInterface;
+use Akeneo\Pim\Structure\Component\Repository\AttributeRepositoryInterface;
+use Akeneo\Tool\Component\Connector\Processor\BulkMediaFetcher;
+use Akeneo\Tool\Component\StorageUtils\Repository\IdentifiableObjectRepositoryInterface;
+use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
 class ProductProcessor extends AkeneoProductProcessor
 {
+    /**
+     * @var \Akeneo\Pim\Structure\Component\Repository\AttributeOptionRepositoryInterface|\Akeneo\Pim\Structure\Bundle\Doctrine\ORM\Repository\AttributeOptionRepository $attributeOptionRepository
+     */
+    protected $attributeOptionRepository;
+
+    /**
+     * @var array
+     */
+    protected $attributeOptions = [];
+
+    /**
+     * Constructor
+     * @param \Symfony\Component\Serializer\Normalizer\NormalizerInterface $normalizer
+     * @param \Akeneo\Tool\Component\StorageUtils\Repository\IdentifiableObjectRepositoryInterface $channelRepository
+     * @param \Akeneo\Pim\Structure\Component\Repository\AttributeRepositoryInterface $attributeRepository
+     * @param \Akeneo\Pim\Structure\Component\Repository\AttributeOptionRepositoryInterface $attributeOptionRepository
+     * @param \Akeneo\Tool\Component\Connector\Processor\BulkMediaFetcher $mediaFetcher
+     * @param \Akeneo\Pim\Enrichment\Component\Product\ValuesFiller\EntityWithFamilyValuesFillerInterface|null $productValuesFiller
+     */
+    public function __construct(
+        NormalizerInterface $normalizer,
+        IdentifiableObjectRepositoryInterface $channelRepository,
+        AttributeRepositoryInterface $attributeRepository,
+        AttributeOptionRepositoryInterface $attributeOptionRepository,
+        BulkMediaFetcher $mediaFetcher,
+        ?EntityWithFamilyValuesFillerInterface $productValuesFiller = null
+    ) {
+        parent::__construct($normalizer, $channelRepository, $attributeRepository, $mediaFetcher, $productValuesFiller);
+        $this->attributeOptionRepository = $attributeOptionRepository;
+    }
+
+
     /**
      * {@inheritdoc}
      */
@@ -23,7 +64,7 @@ class ProductProcessor extends AkeneoProductProcessor
     }
 
     /**
-     * @param $product
+     * @param \Akeneo\Pim\Enrichment\Component\Product\Model\Product $product
      * @param $productStandard
      * @param $localeCodes
      *
@@ -31,33 +72,32 @@ class ProductProcessor extends AkeneoProductProcessor
      */
     protected function changeValuesToOptionLabels($product, $productStandard, $localeCodes)
     {
-        foreach ($product->getAttributes() as $attribute) {
-            $attributeType = $attribute->getType();
-            $attributeCode = $attribute->getCode();
+        foreach ($product->getValues()->getValues() as $attribute) {
+            /** @var \Akeneo\Pim\Enrichment\Component\Product\Model\ValueInterface $attribute */
 
-            if (!array_key_exists($attributeCode, $productStandard['values'])) {
+            if (!array_key_exists($attribute->getAttributeCode(), $productStandard['values'])) {
                 continue;
             }
 
-            $value = $product->getValue($attribute->getCode());
+            $value = $product->getValue($attribute->getAttributeCode());
+            $values = [];
 
-            switch ($attributeType) {
-                case 'pim_catalog_simpleselect':
+            switch (\get_class($attribute)) {
+                case OptionValue::class:
                     $values = $this->changeSelectValueToOptionLabel($value, $localeCodes);
                     break;
-                case 'pim_catalog_multiselect':
+                case OptionsValue::class:
                     $values = $this->changeMultiSelectValuesToOptionLabels($value, $localeCodes);
                     break;
                 default:
                     $values = [];
             }
 
-
-            if (empty($values)) {
+            if (count($values) < 1) {
                 continue;
             }
 
-            $productStandard['values'][$attribute->getCode()] = $values;
+            $productStandard['values'][$attribute->getAttributeCode()] = $values;
         }
 
         return $productStandard;
@@ -69,7 +109,7 @@ class ProductProcessor extends AkeneoProductProcessor
      *
      * @return array
      */
-    protected function changeSelectValueToOptionLabel($value, $localeCodes)
+    protected function changeSelectValueToOptionLabel(OptionValue $value, $localeCodes)
     {
         $values = [];
 
@@ -83,23 +123,27 @@ class ProductProcessor extends AkeneoProductProcessor
             return $values;
         }
 
+
         $values[0] = [
             'locale' => null,
             'scope' => null,
-            'data' => $valueData->getCode()
+            'data' => $valueData
         ];
 
-        foreach ($localeCodes as $index => $localeCode) {
-            $optionValue = $valueData->setLocale($localeCode)->getOptionValue();
 
-            if ($optionValue === null) {
+        $options = $this->getAttributeOptionValues($value->getAttributeCode());
+
+        foreach ($localeCodes as $index => $localeCode) {
+            if (!isset($options[$value->getData()][$localeCode])) {
                 continue;
             }
+
+            $valueData = (string)$options[$value->getData()][$localeCode];
 
             $values[$index + 1] = [
                 'locale' => $localeCode,
                 'scope' => null,
-                'data' => $optionValue->getValue()
+                'data' => $valueData
             ];
         }
 
@@ -129,19 +173,23 @@ class ProductProcessor extends AkeneoProductProcessor
         $values[0] = [
             'locale' => null,
             'scope' => null,
-            'data' => $value->getOptionCodes()
+            'data' => $value->getData()
         ];
+
+
+
+        $options = $this->getAttributeOptionValues($value->getAttributeCode());
 
         foreach ($localeCodes as $index => $localeCode) {
             foreach ($valueData as $valueDataItem) {
-                $optionValue = $valueDataItem->setLocale($localeCode)->getOptionValue();
-
-                if ($optionValue === null) {
+                if (!isset($options[$valueDataItem][$localeCode])) {
                     continue;
                 }
 
+                $valueString = (string)$options[$valueDataItem][$localeCode];
+
                 if (array_key_exists($index + 1, $values)) {
-                    $values[$index + 1]['data'][] = $optionValue->getValue();
+                    $values[$index + 1]['data'][] = $valueString;
                     continue;
                 }
 
@@ -149,12 +197,44 @@ class ProductProcessor extends AkeneoProductProcessor
                     'locale' => $localeCode,
                     'scope' => null,
                     'data' => [
-                        $optionValue->getValue()
+                        $valueString
                     ]
                 ];
             }
         }
 
         return $values;
+    }
+
+    /**
+     * Get attribute option values
+     *
+     * @param string $attributeCode
+     * @return array
+     * @throws \ErrorException
+     */
+    protected function getAttributeOptionValues(string $attributeCode): array
+    {
+        /** @var \Akeneo\Pim\Structure\Component\Model\Attribute $attribute */
+        if (!isset($this->attributeOptions[$attributeCode])) {
+            $attribute = $this->attributeRepository->findOneBy(['code' => $attributeCode]);
+
+            if ($attribute === null) {
+                throw new \ErrorException('attribute not found by code: '. $attributeCode);
+            }
+
+            /** @var \Doctrine\ORM\PersistentCollection $options */
+            $options = $attribute->getOptions();
+
+            foreach ($options as $option) {
+                /** @var \Akeneo\Pim\Structure\Component\Model\AttributeOption $option */
+                foreach ($option->getOptionValues()->getValues() as $attributeOptionValue) {
+                    /** @var \Akeneo\Pim\Structure\Component\Model\AttributeOptionValue $attributeOptionValue */
+                    $this->attributeOptions[$attributeCode][$option->getCode()][$attributeOptionValue->getLocale()] = $attributeOptionValue->getValue();
+                }
+            }
+        }
+
+        return $this->attributeOptions[$attributeCode];
     }
 }
