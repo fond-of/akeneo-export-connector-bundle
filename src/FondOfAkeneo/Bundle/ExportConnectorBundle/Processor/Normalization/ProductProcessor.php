@@ -109,11 +109,11 @@ class ProductProcessor extends AkeneoProductProcessor
      *
      * @return array
      */
-    protected function changeSelectValueToOptionLabel(OptionValue $value, $localeCodes)
+    protected function changeSelectValueToOptionLabel($value, $localeCodes)
     {
         $values = [];
 
-        if ($value === null) {
+        if ($value === null || !$values instanceof OptionValue) {
             return $values;
         }
 
@@ -160,7 +160,7 @@ class ProductProcessor extends AkeneoProductProcessor
     {
         $values = [];
 
-        if ($value === null) {
+        if ($value === null || !$values instanceof OptionsValue) {
             return $values;
         }
 
@@ -175,8 +175,6 @@ class ProductProcessor extends AkeneoProductProcessor
             'scope' => null,
             'data' => $value->getData()
         ];
-
-
 
         $options = $this->getAttributeOptionValues($value->getAttributeCode());
 
