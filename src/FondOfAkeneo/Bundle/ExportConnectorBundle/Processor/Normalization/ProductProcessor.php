@@ -113,7 +113,7 @@ class ProductProcessor extends AkeneoProductProcessor
     {
         $values = [];
 
-        if ($value === null || !$values instanceof OptionValue) {
+        if ($value === null) {
             return $values;
         }
 
@@ -160,7 +160,7 @@ class ProductProcessor extends AkeneoProductProcessor
     {
         $values = [];
 
-        if ($value === null || !$values instanceof OptionsValue) {
+        if ($value === null) {
             return $values;
         }
 
