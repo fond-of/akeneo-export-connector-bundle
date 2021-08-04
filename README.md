@@ -11,7 +11,12 @@ Install bundle with composer:
 composer require fond-of-akeneo/export-connector-bundle:VERSION_CONSTRAINT
 ```
 
-Enable the bundle in ```app/AppKernel.php``` file, in the ```registerBundles``` function, before the line ```return $bundles```:
+Enable the bundle in ```config/bundles.php``` file.:
 ```php
-$bundles[] = new FondOfAkeneo\Bundle\ExportConnectorBundle\FondOfAkeneoExportConnectorBundle();
+<?php
+
+return [
+    ...
+    FondOfAkeneo\Bundle\ExportConnectorBundle\FondOfAkeneoExportConnectorBundle::class => ['dev' => true, 'test' => true, 'prod' => true]
+];
 ```
