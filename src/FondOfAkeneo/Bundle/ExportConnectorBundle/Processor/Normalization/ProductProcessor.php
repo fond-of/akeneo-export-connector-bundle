@@ -6,7 +6,7 @@ use Akeneo\Pim\Enrichment\Component\Product\Connector\Processor\Normalization\Pr
 use Akeneo\Pim\Enrichment\Component\Product\Value\OptionsValue;
 use Akeneo\Pim\Enrichment\Component\Product\Value\OptionValue;
 use Akeneo\Pim\Enrichment\Component\Product\Value\ScalarValue;
-use Akeneo\Pim\Enrichment\Component\Product\ValuesFiller\EntityWithFamilyValuesFillerInterface;
+use Akeneo\Pim\Enrichment\Component\Product\ValuesFiller\FillMissingValuesInterface;
 use Akeneo\Pim\Structure\Component\Repository\AttributeOptionRepositoryInterface;
 use Akeneo\Pim\Structure\Component\Repository\AttributeRepositoryInterface;
 use Akeneo\Tool\Component\Connector\Processor\BulkMediaFetcher;
@@ -26,13 +26,14 @@ class ProductProcessor extends AkeneoProductProcessor
     protected $attributeOptions = [];
 
     /**
-     * Constructor
+     * ProductProcessor constructor.
+     *
      * @param \Symfony\Component\Serializer\Normalizer\NormalizerInterface $normalizer
      * @param \Akeneo\Tool\Component\StorageUtils\Repository\IdentifiableObjectRepositoryInterface $channelRepository
      * @param \Akeneo\Pim\Structure\Component\Repository\AttributeRepositoryInterface $attributeRepository
      * @param \Akeneo\Pim\Structure\Component\Repository\AttributeOptionRepositoryInterface $attributeOptionRepository
      * @param \Akeneo\Tool\Component\Connector\Processor\BulkMediaFetcher $mediaFetcher
-     * @param \Akeneo\Pim\Enrichment\Component\Product\ValuesFiller\EntityWithFamilyValuesFillerInterface|null $productValuesFiller
+     * @param \Akeneo\Pim\Enrichment\Component\Product\ValuesFiller\FillMissingValuesInterface $fillMissingProductModelValues
      */
     public function __construct(
         NormalizerInterface $normalizer,
@@ -40,9 +41,9 @@ class ProductProcessor extends AkeneoProductProcessor
         AttributeRepositoryInterface $attributeRepository,
         AttributeOptionRepositoryInterface $attributeOptionRepository,
         BulkMediaFetcher $mediaFetcher,
-        ?EntityWithFamilyValuesFillerInterface $productValuesFiller = null
+        FillMissingValuesInterface $fillMissingProductModelValues
     ) {
-        parent::__construct($normalizer, $channelRepository, $attributeRepository, $mediaFetcher, $productValuesFiller);
+        parent::__construct($normalizer, $channelRepository, $attributeRepository, $mediaFetcher, $fillMissingProductModelValues);
         $this->attributeOptionRepository = $attributeOptionRepository;
     }
 
