@@ -10,15 +10,66 @@ use Akeneo\Pim\Enrichment\Component\Product\ValuesFiller\FillMissingValuesInterf
 use Akeneo\Pim\Structure\Component\Repository\AttributeOptionRepositoryInterface;
 use Akeneo\Pim\Structure\Component\Repository\AttributeRepositoryInterface;
 use Akeneo\Tool\Component\Connector\Processor\BulkMediaFetcher;
+use Akeneo\Tool\Component\StorageUtils\Cache\EntityManagerClearerInterface;
 use Akeneo\Tool\Component\StorageUtils\Repository\IdentifiableObjectRepositoryInterface;
+use Bynder\Api\BynderClient;
+use Bynder\Api\Impl\PermanentTokens\Configuration;
+use Induxx\Bundle\CredentialsManagerBundle\Repository\CredentialsRepository;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
 class ProductProcessor extends AkeneoProductProcessor
 {
+    protected const IMAGE_ATTRIBUTE_CODES = [
+        'img_front',
+        'img_front_left',
+        'img_front_right',
+        'img_back',
+        'img_back_left',
+        'img_back_right',
+        'img_right',
+        'img_left',
+        'img_top',
+        'img_set_composing',
+        'img_detail_01',
+        'img_detail_02',
+        'img_detail_03',
+        'img_detail_04',
+        'img_detail_05',
+        'img_detail_06',
+        'img_detail_07',
+        'img_detail_08',
+        'img_detail_09',
+        'img_detail_10',
+        'img_model_01',
+        'img_model_02',
+        'img_model_03',
+        'img_model_04',
+        'img_model_05',
+        'img_model_06',
+        'img_model_07',
+        'img_model_08',
+        'img_model_09',
+        'img_model_13',
+        'img_sole',
+        'img_left_inside',
+        'img_right_inside',
+        'img_left_outside',
+        'img_right_outside',
+        'img_usp_01',
+        'img_usp_02',
+        'img_usp_03',
+        'img_size_chart'
+    ];
+
     /**
      * @var \Akeneo\Pim\Structure\Component\Repository\AttributeOptionRepositoryInterface|\Akeneo\Pim\Structure\Bundle\Doctrine\ORM\Repository\AttributeOptionRepository $attributeOptionRepository
      */
     protected $attributeOptionRepository;
+
+    /**
+     * @var \Induxx\Bundle\CredentialsManagerBundle\Repository\CredentialsRepository
+     */
+    protected $credentialsRepository;
 
     /**
      * @var array
@@ -41,15 +92,18 @@ class ProductProcessor extends AkeneoProductProcessor
         AttributeRepositoryInterface $attributeRepository,
         AttributeOptionRepositoryInterface $attributeOptionRepository,
         BulkMediaFetcher $mediaFetcher,
-        FillMissingValuesInterface $fillMissingProductModelValues
+        FillMissingValuesInterface $fillMissingProductModelValues,
+        EntityManagerClearerInterface $entityManagerClearer,
+        CredentialsRepository $credentialsRepository
     ) {
         parent::__construct($normalizer, $channelRepository, $attributeRepository, $mediaFetcher, $fillMissingProductModelValues);
         $this->attributeOptionRepository = $attributeOptionRepository;
+        $this->credentialsRepository = $credentialsRepository;
     }
 
 
     /**
-     * {@inheritdoc}
+     * @param \Akeneo\Pim\Enrichment\Component\Product\Model\Product $product
      */
     public function process($product)
     {
@@ -61,7 +115,80 @@ class ProductProcessor extends AkeneoProductProcessor
             $parameters->get('filters')['structure']['locales']
         );
 
-        return $this->changeValuesToOptionLabels($product, parent::process($product), $localeCodes);
+        $productStandard = parent::process($product);
+
+        $productStandard = $this->addBynderMedia($product, $productStandard);
+
+        return $this->changeValuesToOptionLabels($product, $productStandard, $localeCodes);
+    }
+
+    /**
+     * @param \Akeneo\Pim\Enrichment\Component\Product\Model\Product $product
+     * @param $productStandard
+     *
+     * @return array
+     */
+    protected function addBynderMedia($product, $productStandard)
+    {
+        $media = [];
+        /** @var \Akeneo\Pim\Enrichment\Component\Product\Model\WriteValueCollection $item */
+        foreach ($product->getValues()->getValues() as $attribute) {
+
+            if (!in_array($attribute->getAttributeCode(), static::IMAGE_ATTRIBUTE_CODES)) {
+                continue;
+            }
+            /** @var $mediaValue \Akeneo\Tool\Component\FileStorage\Model\FileInfo */
+            $mediaValue = $attribute->getData();
+            if ($mediaValue->getKey() === null) {
+                continue;
+            }
+            $media[$mediaValue->getKey()] = $attribute->getAttributeCode();
+        }
+
+        if (count($media) === 0) {
+            return $productStandard;
+        }
+
+        $assetUrls = $this->getBynderDatUrl($media);
+        foreach ($assetUrls as $key => $assetUrl) {
+            $productStandard['values'][$key][] = [
+                'scope' => null,
+                'locale' => null,
+                'data' => $assetUrl,
+            ];
+        }
+
+        return $productStandard;
+    }
+
+    /**
+     * @param $assetIds
+     *
+     * @return array
+     */
+    protected function getBynderDatUrl($assetIds)
+    {
+        $credential = $this->credentialsRepository->getCredentialFromCode('bynder', 'one_time_key');
+
+        $configuration = new Configuration(
+            $credential['host'],
+            $credential['token']
+        );
+
+        $client = new BynderClient($configuration);
+        $assetBankManager = $client->getAssetBankManager();
+
+        $mediaList = $assetBankManager->getMediaList(
+            [
+                'ids' => join(',', array_keys($assetIds))
+            ]
+        )->wait();
+
+        foreach ($mediaList as $media) {
+            $assetUrls[$assetIds[$media['id']]] = $media['transformBaseUrl'];
+        }
+
+        return $assetUrls;
     }
 
     /**
