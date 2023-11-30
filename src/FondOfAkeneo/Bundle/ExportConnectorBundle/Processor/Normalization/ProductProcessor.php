@@ -61,6 +61,8 @@ class ProductProcessor extends AkeneoProductProcessor
         'img_size_chart'
     ];
 
+    const CACHE_PATH = '/var/www/pim/releases/current/web/public/bynder-cache.json';
+
     /**
      * @var \Akeneo\Pim\Structure\Component\Repository\AttributeOptionRepositoryInterface|\Akeneo\Pim\Structure\Bundle\Doctrine\ORM\Repository\AttributeOptionRepository $attributeOptionRepository
      */
@@ -162,11 +164,45 @@ class ProductProcessor extends AkeneoProductProcessor
     }
 
     /**
-     * @param $assetIds
+     * @param $media
      *
      * @return array
      */
-    protected function getBynderDatUrl($assetIds)
+    protected function getBynderDatUrl($media)
+    {
+        $assetUrls = [];
+        $assetIds = array_keys($media);
+        $cache = json_decode(file_get_contents(static::CACHE_PATH));
+
+        foreach ($assetIds as $assetId) {
+            if (array_key_exists($assetId, $cache)) {
+                $assetUrls[$media[$assetId]] = sprintf('%s/%s', $assetId, $cache[$assetId]);
+                unset($media[$assetId]);
+            }
+        }
+
+        if (count($media) === 0) {
+            return $assetUrls;
+        }
+
+        $mediaList = $this->fetchUncachedAssets($media);
+
+        foreach ($mediaList as $item) {
+            $name = str_replace(' ', '-', $item['name']);
+            $cache[$item['id']] = $name;
+            $assetUrls[$assetIds[$item['id']]] = sprintf('%s/%s', $item['id'], $name);
+        }
+
+        file_put_contents(static::CACHE_PATH, json_encode($cache));
+
+        return $assetUrls;
+    }
+
+    /**
+     * @param $media
+     * @return mixed
+     */
+    protected function fetchUncachedAssets($media)
     {
         $credential = $this->credentialsRepository->getCredentialFromCode('bynder', 'one_time_key');
 
@@ -180,15 +216,11 @@ class ProductProcessor extends AkeneoProductProcessor
 
         $mediaList = $assetBankManager->getMediaList(
             [
-                'ids' => join(',', array_keys($assetIds))
+                'ids' => join(',', array_keys($media))
             ]
         )->wait();
 
-        foreach ($mediaList as $media) {
-            $assetUrls[$assetIds[$media['id']]] = $media['transformBaseUrl'];
-        }
-
-        return $assetUrls;
+        return $mediaList;
     }
 
     /**
