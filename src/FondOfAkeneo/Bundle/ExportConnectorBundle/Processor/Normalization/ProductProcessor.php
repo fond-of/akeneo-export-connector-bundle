@@ -172,7 +172,7 @@ class ProductProcessor extends AkeneoProductProcessor
     {
         $assetUrls = [];
         $assetIds = array_keys($media);
-        $cache = json_decode(file_get_contents(static::CACHE_PATH));
+        $cache = json_decode(file_get_contents(static::CACHE_PATH), true);
 
         foreach ($assetIds as $assetId) {
             if (array_key_exists($assetId, $cache)) {
@@ -190,7 +190,7 @@ class ProductProcessor extends AkeneoProductProcessor
         foreach ($mediaList as $item) {
             $name = str_replace(' ', '-', $item['name']);
             $cache[$item['id']] = $name;
-            $assetUrls[$assetIds[$item['id']]] = sprintf('%s/%s', $item['id'], $name);
+            $assetUrls[$media[$item['id']]] = sprintf('%s/%s', $item['id'], $name);
         }
 
         file_put_contents(static::CACHE_PATH, json_encode($cache));
