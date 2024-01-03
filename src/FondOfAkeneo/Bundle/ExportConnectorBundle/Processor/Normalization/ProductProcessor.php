@@ -176,7 +176,7 @@ class ProductProcessor extends AkeneoProductProcessor
 
         foreach ($assetIds as $assetId) {
             if (array_key_exists($assetId, $cache)) {
-                $assetUrls[$media[$assetId]] = sprintf('%s/%s', $assetId, $cache[$assetId]);
+                $assetUrls[$media[$assetId]] = $cache[$assetId];
                 unset($media[$assetId]);
             }
         }
@@ -188,9 +188,9 @@ class ProductProcessor extends AkeneoProductProcessor
         $mediaList = $this->fetchUncachedAssets($media);
 
         foreach ($mediaList as $item) {
-            $name = str_replace(' ', '-', $item['name']);
+            $name = explode('https://fondof.getbynder.com/transform/', $item['transformBaseUrl'])[1];
             $cache[$item['id']] = $name;
-            $assetUrls[$media[$item['id']]] = sprintf('%s/%s', $item['id'], $name);
+            $assetUrls[$media[$item['id']]] = $name;
         }
 
         file_put_contents(static::CACHE_PATH, json_encode($cache));
