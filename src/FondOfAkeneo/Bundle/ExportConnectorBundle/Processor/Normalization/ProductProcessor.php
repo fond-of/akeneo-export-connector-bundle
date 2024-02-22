@@ -14,7 +14,6 @@ use Akeneo\Tool\Component\StorageUtils\Cache\EntityManagerClearerInterface;
 use Akeneo\Tool\Component\StorageUtils\Repository\IdentifiableObjectRepositoryInterface;
 use Bynder\Api\BynderClient;
 use Bynder\Api\Impl\PermanentTokens\Configuration;
-use Induxx\Bundle\CredentialsManagerBundle\Repository\CredentialsRepository;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
 class ProductProcessor extends AkeneoProductProcessor
@@ -61,8 +60,6 @@ class ProductProcessor extends AkeneoProductProcessor
         'img_size_chart'
     ];
 
-    const CACHE_PATH = '/var/www/pim/releases/current/web/public/bynder-cache.json';
-
     /**
      * @var \Akeneo\Pim\Structure\Component\Repository\AttributeOptionRepositoryInterface|\Akeneo\Pim\Structure\Bundle\Doctrine\ORM\Repository\AttributeOptionRepository $attributeOptionRepository
      */
@@ -96,11 +93,9 @@ class ProductProcessor extends AkeneoProductProcessor
         BulkMediaFetcher $mediaFetcher,
         FillMissingValuesInterface $fillMissingProductModelValues,
         EntityManagerClearerInterface $entityManagerClearer,
-        CredentialsRepository $credentialsRepository
     ) {
         parent::__construct($normalizer, $channelRepository, $attributeRepository, $mediaFetcher, $fillMissingProductModelValues);
         $this->attributeOptionRepository = $attributeOptionRepository;
-        $this->credentialsRepository = $credentialsRepository;
     }
 
 
@@ -119,7 +114,7 @@ class ProductProcessor extends AkeneoProductProcessor
 
         $productStandard = parent::process($product);
 
-        $productStandard = $this->addBynderMedia($product, $productStandard);
+        $productStandard = $this->extractName($product, $productStandard);
 
         return $this->changeValuesToOptionLabels($product, $productStandard, $localeCodes);
     }
@@ -130,7 +125,7 @@ class ProductProcessor extends AkeneoProductProcessor
      *
      * @return array
      */
-    protected function addBynderMedia($product, $productStandard)
+    protected function extractName($product, $productStandard)
     {
         $media = [];
         /** @var \Akeneo\Pim\Enrichment\Component\Product\Model\WriteValueCollection $item */
@@ -151,76 +146,7 @@ class ProductProcessor extends AkeneoProductProcessor
             return $productStandard;
         }
 
-        $assetUrls = $this->getBynderDatUrl($media);
-        foreach ($assetUrls as $key => $assetUrl) {
-            $productStandard['values'][$key][] = [
-                'scope' => null,
-                'locale' => null,
-                'data' => $assetUrl,
-            ];
-        }
-
         return $productStandard;
-    }
-
-    /**
-     * @param $media
-     *
-     * @return array
-     */
-    protected function getBynderDatUrl($media)
-    {
-        $assetUrls = [];
-        $assetIds = array_keys($media);
-        $cache = json_decode(file_get_contents(static::CACHE_PATH), true);
-
-        foreach ($assetIds as $assetId) {
-            if (array_key_exists($assetId, $cache)) {
-                $assetUrls[$media[$assetId]] = $cache[$assetId];
-                unset($media[$assetId]);
-            }
-        }
-
-        if (count($media) === 0) {
-            return $assetUrls;
-        }
-
-        $mediaList = $this->fetchUncachedAssets($media);
-
-        foreach ($mediaList as $item) {
-            $name = explode('https://fondof.getbynder.com/transform/', $item['transformBaseUrl'])[1];
-            $cache[$item['id']] = $name;
-            $assetUrls[$media[$item['id']]] = $name;
-        }
-
-        file_put_contents(static::CACHE_PATH, json_encode($cache));
-
-        return $assetUrls;
-    }
-
-    /**
-     * @param $media
-     * @return mixed
-     */
-    protected function fetchUncachedAssets($media)
-    {
-        $credential = $this->credentialsRepository->getCredentialFromCode('bynder', 'one_time_key');
-
-        $configuration = new Configuration(
-            $credential['host'],
-            $credential['token']
-        );
-
-        $client = new BynderClient($configuration);
-        $assetBankManager = $client->getAssetBankManager();
-
-        $mediaList = $assetBankManager->getMediaList(
-            [
-                'ids' => join(',', array_keys($media))
-            ]
-        )->wait();
-
-        return $mediaList;
     }
 
     /**
