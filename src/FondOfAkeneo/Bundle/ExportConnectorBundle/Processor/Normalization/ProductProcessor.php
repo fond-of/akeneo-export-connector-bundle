@@ -103,7 +103,7 @@ class ProductProcessor extends AkeneoProductProcessor
     /**
      * @param \Akeneo\Pim\Enrichment\Component\Product\Model\Product $product
      */
-    public function process($product)
+    public function process($product): array
     {
         $parameters = $this->stepExecution->getJobParameters();
         $structure = $parameters->get('filters')['structure'];
