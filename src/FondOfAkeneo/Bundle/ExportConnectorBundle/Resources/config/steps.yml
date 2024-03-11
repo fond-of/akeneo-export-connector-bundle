@@ -9,3 +9,4 @@ services:
             - '@fondofakeneo_export_connector.processor.normalization.product'
             - '@pim_connector.writer.file.csv_product'
             - '%pim_job_product_batch_size%'
+            - '@akeneo_batch.job.job_stopper'
