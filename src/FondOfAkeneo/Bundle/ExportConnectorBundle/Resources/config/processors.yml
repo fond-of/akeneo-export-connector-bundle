@@ -9,6 +9,6 @@ services:
             - '@pim_catalog.repository.channel'
             - '@pim_catalog.repository.attribute'
             - '@pim_catalog.repository.attribute_option'
-            - '@pim_connector.processor.bulk_media_fetcher'
             - '@pim_catalog.product.fill_missing_values'
-            - '@pim_connector.doctrine.cache_clearer'
+            - '@akeneo.pim.structure.query.get_attributes'
+            - '@pim_connector.processor.normalization.get_normalized_product_quality_scores'

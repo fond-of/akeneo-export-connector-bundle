@@ -82,19 +82,20 @@ class ProductProcessor extends AkeneoProductProcessor
      * @param \Akeneo\Tool\Component\StorageUtils\Repository\IdentifiableObjectRepositoryInterface $channelRepository
      * @param \Akeneo\Pim\Structure\Component\Repository\AttributeRepositoryInterface $attributeRepository
      * @param \Akeneo\Pim\Structure\Component\Repository\AttributeOptionRepositoryInterface $attributeOptionRepository
-     * @param \Akeneo\Tool\Component\Connector\Processor\BulkMediaFetcher $mediaFetcher
      * @param \Akeneo\Pim\Enrichment\Component\Product\ValuesFiller\FillMissingValuesInterface $fillMissingProductModelValues
+     * @param \FondOfAkeneo\Bundle\ExportConnectorBundle\Processor\Normalization\GetAttributes $getAttributes
+     * @param \FondOfAkeneo\Bundle\ExportConnectorBundle\Processor\Normalization\GetNormalizedQualityScoresInterface $getNormalizedQualityScores
      */
     public function __construct(
         NormalizerInterface $normalizer,
         IdentifiableObjectRepositoryInterface $channelRepository,
         AttributeRepositoryInterface $attributeRepository,
         AttributeOptionRepositoryInterface $attributeOptionRepository,
-        BulkMediaFetcher $mediaFetcher,
         FillMissingValuesInterface $fillMissingProductModelValues,
-        EntityManagerClearerInterface $entityManagerClearer,
+        GetAttributes $getAttributes,
+        GetNormalizedQualityScoresInterface $getNormalizedQualityScores
     ) {
-        parent::__construct($normalizer, $channelRepository, $attributeRepository, $mediaFetcher, $fillMissingProductModelValues);
+        parent::__construct($normalizer, $channelRepository, $attributeRepository, $fillMissingProductModelValues, $getAttributes, $getNormalizedQualityScores);
         $this->attributeOptionRepository = $attributeOptionRepository;
     }
 
