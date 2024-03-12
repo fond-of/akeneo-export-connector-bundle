@@ -6,13 +6,14 @@ use Akeneo\Pim\Enrichment\Component\Product\Connector\Processor\Normalization\Pr
 use Akeneo\Pim\Enrichment\Component\Product\Value\OptionsValue;
 use Akeneo\Pim\Enrichment\Component\Product\Value\OptionValue;
 use Akeneo\Pim\Enrichment\Component\Product\Value\ScalarValue;
+use Akeneo\Pim\Enrichment\Component\Product\Connector\Processor\Normalization\GetNormalizedQualityScoresInterface;
 use Akeneo\Pim\Enrichment\Component\Product\ValuesFiller\FillMissingValuesInterface;
+use Akeneo\Pim\Structure\Component\Query\PublicApi\AttributeType\GetAttributes;
 use Akeneo\Pim\Structure\Component\Repository\AttributeOptionRepositoryInterface;
 use Akeneo\Pim\Structure\Component\Repository\AttributeRepositoryInterface;
 use Akeneo\Tool\Component\Connector\Processor\BulkMediaFetcher;
 use Akeneo\Tool\Component\StorageUtils\Cache\EntityManagerClearerInterface;
 use Akeneo\Tool\Component\StorageUtils\Repository\IdentifiableObjectRepositoryInterface;
-use Bynder\Api\BynderClient;
 use Bynder\Api\Impl\PermanentTokens\Configuration;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
@@ -83,8 +84,8 @@ class ProductProcessor extends AkeneoProductProcessor
      * @param \Akeneo\Pim\Structure\Component\Repository\AttributeRepositoryInterface $attributeRepository
      * @param \Akeneo\Pim\Structure\Component\Repository\AttributeOptionRepositoryInterface $attributeOptionRepository
      * @param \Akeneo\Pim\Enrichment\Component\Product\ValuesFiller\FillMissingValuesInterface $fillMissingProductModelValues
-     * @param \FondOfAkeneo\Bundle\ExportConnectorBundle\Processor\Normalization\GetAttributes $getAttributes
-     * @param \FondOfAkeneo\Bundle\ExportConnectorBundle\Processor\Normalization\GetNormalizedQualityScoresInterface $getNormalizedQualityScores
+     * @param \Akeneo\Pim\Structure\Component\Query\PublicApi\AttributeType\GetAttributes $getAttributes
+     * @param \Akeneo\Pim\Enrichment\Component\Product\Connector\Processor\Normalization\GetNormalizedQualityScoresInterface $getNormalizedQualityScores
      */
     public function __construct(
         NormalizerInterface $normalizer,
